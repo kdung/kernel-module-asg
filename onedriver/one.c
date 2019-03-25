@@ -35,11 +35,21 @@ int onebyte_release(struct inode *inode, struct file *filep) {
 }
 
 ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos) {
-    /*please complete the function on your own*/
+    if (*onebyte_data == 0)
+        return 0;
+    put_user(*onebyte_data, buf);
+    return 1;
 }
 
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos) {
-    /*please complete the function on your own*/
+    if (count > sizeof(char)) {
+        printk(KERN_ALERT "No space left on device\n");
+        return -ENOSPC;
+    }
+    if (count == sizeof(char)) {
+        get_user(onebyte_data, buf);
+    }
+    return 1;
 }
 
 static int onebyte_init(void) {
@@ -57,9 +67,9 @@ static int onebyte_init(void) {
 
     if (!onebyte_data) {
         onebyte_exit();
-    // cannot allocate memory
-    // return no memory error, negative signify a failure
-    return -ENOMEM;
+        // cannot allocate memory
+        // return no memory error, negative signify a failure
+        return -ENOMEM;
     }
 
     // initialize the value to be X
