@@ -24,7 +24,7 @@ struct file_operations onebyte_fops = {
     release: onebyte_release
 };
 
-char *onebyte_data = NULL;
+static char *onebyte_data = {0};
 
 int onebyte_open(struct inode *inode, struct file *filep) {
     return 0; // always successful
@@ -35,30 +35,31 @@ int onebyte_release(struct inode *inode, struct file *filep) {
 }
 
 ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos) {
+    int bytes_read = 0;
     // return 0 if we're at the end of the message
     if (*onebyte_data == 0)
         return 0;
-    if (count >= sizeof(char)) {
-    	    if (put_user(*onebyte_data, buf)) {
-	    	return -EFAULT;
-	    }
-	    count--;
-    }
-    return 1;
+    if (*buf != 0)
+	return 0;
+    if (put_user(*(onebyte_data), buf))
+	return -EFAULT;
+    bytes_read++;
+    return bytes_read;
 }
 
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos) {
+    int bytes_write = 0;
+    if (count >= sizeof(char)) {
+        if (get_user(*onebyte_data, buf)) {
+	    return -EFAULT;
+	}
+	bytes_write++;
+    }
     if (count > sizeof(char)) {
         printk(KERN_ALERT "No space left on device\n");
         return -ENOSPC;
     }
-    if (count == sizeof(char)) {
-        if (get_user(*onebyte_data, buf)) {
-	    return -EFAULT;
-	}
-	count--;
-    }
-    return 1;
+    return bytes_write;
 }
 
 static int onebyte_init(void) {
