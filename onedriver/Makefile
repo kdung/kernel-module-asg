@@ -6,9 +6,3 @@ all:
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 
-load:
-    insmod one.ko
-
-unload:
-    rmmod one.ko
-
